@@ -12,7 +12,6 @@ import java.time.Clock;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Random;
-
 public class Main {
     public static int WIDTH = 1200;
     public static int HEIGHT = 800;
