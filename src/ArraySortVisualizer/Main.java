@@ -32,11 +32,11 @@ public class Main {
     Main(){
         System.out.println("Hello world!");
         scene = new Scene(WIDTH, HEIGHT);
-        scene.setBorder(20, Color.CYAN);
-        scene.setCoordVisible(true);
-        scene.setCenterVisible(true);
-        scene.setBorderVisible(true);
-        frame = new JFrame("3D");
+        //scene.setBorder(20, Color.CYAN);
+        //scene.setCoordVisible(true);
+        //scene.setCenterVisible(true);
+        //scene.setBorderVisible(true);
+        frame = new JFrame("Array sort Visualizer");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(new Dimension(WIDTH+100, HEIGHT+100));
         frame.setLayout(new BorderLayout());
