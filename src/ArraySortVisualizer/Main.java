@@ -11,7 +11,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.util.Arrays;
@@ -19,10 +18,6 @@ import java.util.Random;
 public class Main {
     public static int WIDTH = 800;
     public static int HEIGHT = 600;
-    public static boolean flag_sel = false;
-    public static boolean flag_bub = false;
-    public static boolean flag_ins = false;
-    public static boolean flag_sha = false;
     public static boolean flag_sort = false;
     public static Scene scene;
     public static int maxH;
@@ -34,20 +29,22 @@ public class Main {
     public static int startY;
     public static JFrame frame;
     public static int[] sizeBuff;
-    private JPanel panel;
+    private final JPanel panel;
     private static Array<SortItem<Rectangle>> array;
     private static ShapeObject visual;
     private BufferedImage image;
+    private long delay = 10L;
+    private Timer t;
     Main(){
-        System.out.println("Hello world!");
         visual = new ShapeObject("array", 1);
         BufferAWTImageDrawingObject drawingObject = new BufferAWTImageDrawingObject();
-        scene = new Scene(WIDTH, HEIGHT, Color.TRANSPARENT, drawingObject);
+        scene = new Scene(WIDTH, HEIGHT, Color.DARKGRAY, drawingObject);
         scene.add(visual);
-        //scene.setBorder(20, Color.CYAN);
-        //scene.setCoordVisible(true);
-        //scene.setCenterVisible(true);
-        //scene.setBorderVisible(true);
+
+        /*scene.setCoordVisible(true);
+        scene.setCenterVisible(true);
+        scene.setBorderVisible(true);*/
+
         frame = new JFrame("Array sort Visualizer");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(new Dimension(WIDTH+100, HEIGHT+100));
@@ -67,38 +64,36 @@ public class Main {
         buble.setPreferredSize(new Dimension(70, 20));
         select.setPreferredSize(new Dimension(70, 20));
         insert.setPreferredSize(new Dimension(70, 20));
-
         shafl.setPreferredSize(new Dimension(70, 20));
 
-        buble.addActionListener(actionEvent -> {if(flag_sort) return;flag_bub = true; flag_sort = true;});
-        insert.addActionListener(actionEvent -> {if(flag_sort) return;flag_ins = true; flag_sort = true;});
-        select.addActionListener(actionEvent -> {if(flag_sort) return;flag_sel = true; flag_sort = true;});
-
-        shafl.addActionListener(actionEvent -> {if(flag_sort) return;flag_sha = true; flag_sort = true;});
-
-        /*buble.addActionListener(actionEvent -> {
-            bubleSort();
-            flag_sel = false;
+        buble.addActionListener(actionEvent -> {
+            flag_sort = true;
+            new Thread(() -> bubleSort()).start();
+            flag_sort = false;
+        });
+        select.addActionListener(actionEvent -> {
+            flag_sort = true;
+            new Thread(() -> selectionSort()).start();
             flag_sort = false;
         });
         insert.addActionListener(actionEvent -> {
-            selectionSort();
-            flag_bub = false;
-            flag_sort = false;});
+            flag_sort = true;
+            new Thread(() -> insertSort()).start();
+            flag_sort = false;
+        });
         shafl.addActionListener(actionEvent -> {
-            shafle();
-            flag_sha = false;
-            flag_sort = false;});*/
-        array = new Array<>(0);
+            flag_sort = true;
+            shafle(true);
+            flag_sort = false;
+        });
+
+        size = 200;
+        array = new Array<>(size);
         array.setSwapConsumer((i, j) -> {
             array.get(i).getBody().color = Color.GREEN;
             array.get(j).getBody().color = Color.RED;
             SortItem.swap(array.get(i), array.get(j));
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            sleep();
             array.get(i).getBody().color = color;
             array.get(j).getBody().color = color;
         });
@@ -107,18 +102,12 @@ public class Main {
             i.getBody().color = Color.GREEN;
             j.getBody().color = Color.RED;
             SortItem.assign(i, j);
-            /*try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }*/
+            sleep();
             i.getBody().color = color;
             j.getBody().color = color;
         });
 
-        array.setSaveConsumer((x) -> {
-            return SortItem.save(x);
-        });
+        array.setSaveConsumer((x) -> SortItem.save(x));
 
         Box vBox = Box.createVerticalBox();
         vBox.add(buble);
@@ -127,75 +116,52 @@ public class Main {
         vBox.add(shafl);
 
         frame.add(vBox, BorderLayout.WEST);
-        /*frame.add(insert, BorderLayout.EAST);
-        frame.add(shafl, BorderLayout.SOUTH);*/
         frame.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-               scene.resize(frame.getWidth()-100, frame.getHeight()-100);
-                //Scene.objects.clear();
-                shafle(false);
+                if(!flag_sort) {
+                    scene.resize(frame.getWidth() - 100, frame.getHeight() - 100);
+                    shafle(false);
+                }
             }
         });
 
-        Timer t = new Timer(15, this::draw);
+        t = new Timer(15, this::draw);
 
         frame.setVisible(true);
         shafle(true);
-        //scene.repaint();
-        t.start();
-        /*frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                super.windowClosing(e);
-                System.exit(0);
-            }
-        });*/
     }
 
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                Main m = new Main();
+                m.t.start();
+            }
+        });
+    }
+
+    /**Sleep for algorithm visible*/
+    private void sleep(){
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**Draw frame*/
     private void draw(ActionEvent actionEvent) {
-        //System.out.println("start");
         scene.repaint();
         image = scene.getImage();
         panel.repaint();
-        //System.out.println("stop");
     }
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        /*SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                new Main();
-            }
-        });*/
-        new Main();
-        while (true){
-            if(flag_sel){
-                selectionSort();
-                flag_sel = false;
-            }else if(flag_bub){
-                bubleSort();
-                flag_bub = false;
-            }else if(flag_sha){
-                shafle(true);
-                flag_sha = false;
-            }else if(flag_ins){
-                insertSort();
-                flag_ins = false;
-            }
-            flag_sort = false;
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    public static void shafle(boolean rand){
-        //Scene.objects.clear();//TODO
-        visual.clear();
-        size = 200;
-        array.resize(size);
+    /**Shafl random array*/
+    public void shafle(boolean rand){
         if (rand) {
+            visual.clear();
+            array.resize(size);
             sizeBuff = new int[size];
         }
 
@@ -204,7 +170,7 @@ public class Main {
         maxH = (Main.frame.getHeight()-100)/4;
         startX = -(((size-1)*(itemSize*(interval+1))))/2;
         startY = -maxH;
-        color = Color.MAGENTA;
+        color = Color.WHITE;
 
         Random r = new Random();
         int oldMax = Arrays.stream(sizeBuff).max().getAsInt();
@@ -224,57 +190,43 @@ public class Main {
                     value = 0;
                 }
             }
-
-            SortItem<Rectangle> item = new SortItem<>(new Rectangle(value, itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY + value), color), value);
-            array.add(item);
-            visual.add(item.getBody());
-
-            //ShapeObject item = new ShapeObject("Grapsh", 1);
-
-            //item.add(new Rectangle(   value, itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY + value), color));
-
-            //if(i%2 == 0)      item.add(new Triangle(    value, itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY + value), color));
-            /*else if(i%3 == 0) item.add(new Circle(      value, itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY + value), color));
-            else              item.add(new Rectangle(   value, itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY + value), color));
-
-            if(i%2 == 0)      item.add(new Rectangle(   itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY+(value*2)), Color.BLUE));
-            else if(i%3 == 0) item.add(new Triangle(    itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY+(value*2)), Color.BLUE));
-            else              item.add(new Circle(      itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), startY+(value*2)), Color.BLUE));
-            if(i%2 == 0)      item.add(new Circle(      itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), itemSize + (startY+(value*2))), Color.PINK));
-            else if(i%3 == 0) item.add(new Rectangle(   itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), itemSize + (startY+(value*2))), Color.PINK));
-            else              item.add(new Triangle(    itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))), itemSize + (startY+(value*2))), Color.PINK));
-            if(i%2 == 0)      item.add(new Triangle(    itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))),  2*itemSize + (startY+(value*2))), Color.ORANGE));
-            else if(i%3 == 0) item.add(new Circle(      itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))),  2*itemSize + (startY+(value*2))), Color.ORANGE));
-            else              item.add(new Rectangle(   itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))),  2*itemSize + (startY+(value*2))), Color.ORANGE));*/
-
-            //item.add(new Line(Line.TYPE.VERTICAL, itemSize/2, new Vector2(startX + (i*(itemSize*(interval+1))),  3*itemSize + (startY+(value*2))), Color.BLACK));
-            //scene.add(item);
-            //if(rand) sizeBuff[i] = item.body.get(0).height;
-            if (rand) {
+            if(rand) {
+                SortItem<Rectangle> item = new SortItem<>(new Rectangle(value, itemSize / 2, new Vector2(startX + (i * (itemSize * (interval + 1))), startY + value), color), value);
+                array.set(i, item);
+                visual.add(item.getBody());
                 sizeBuff[i] = item.getValue();
+            }
+            else {
+                SortItem<Rectangle> item = new SortItem<>(new Rectangle(array.get(i).getValue(), itemSize / 2, new Vector2(startX + (i * (itemSize * (interval + 1))), startY + value), color), value);
+                array.set(i, item);
+                visual.set(i, item.getBody());
             }
         }
 
     }
 
     /**Selection Sort*/
-    public static void selectionSort() {
+    public void selectionSort() {
         array.selectSort();
+        sizeBuff = Arrays.stream(sizeBuff).sorted().toArray();
     }
 
     /**Buble Sort*/
-    public static void bubleSort(){
+    public void bubleSort(){
         array.bubbleSort();
+        sizeBuff = Arrays.stream(sizeBuff).sorted().toArray();
     }
 
-    public static void insertSort(){
+    /**Insert Sort*/
+    public void insertSort(){
         array.insertSort();
+        sizeBuff = Arrays.stream(sizeBuff).sorted().toArray();
 
         System.out.println(array);
         Clock clock = Clock.tickMillis(ZoneId.systemDefault());
-        System.out.println(clock.millis());//todo
+        System.out.println(clock.millis());//TODO
 
-        System.out.println(clock.millis());//todo
+        System.out.println(clock.millis());
     }
 }
 

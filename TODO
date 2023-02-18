@@ -1,14 +1,17 @@
 /**
  *                  ArraySortVisualizer
  *
- *      Add varying sorting algoritms
  *      Add more functionality in GUI like size array e.t.c
  *      //TODO 5.08.22 Realize sorting copmosite objects
- *      Realize good code names
  *      Show Time sort
  *      //TODO 6.08.22 Realize scaling and resize
  *
- *
+ *      Make more algorith,
+ *      Fix Insert Algorithm,
+ *      Make algorith not static and make normal buttons,
+ *      make setting file with last settings,
+ *      make function sort with choose ather sorting algorithms,
+ *      make normal timer and show time in sorting time and stop when sorting stops
  *
  *
  *
