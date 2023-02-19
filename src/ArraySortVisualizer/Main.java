@@ -6,15 +6,11 @@ import com.FXChemiEngine.engine.ShapeObject;
 import com.FXChemiEngine.engine.shape.Rectangle;
 import com.FXChemiEngine.math.UnityMath.Vector2;
 import com.FXChemiEngine.util.Color;
-import com.FXChemiEngine.util.Utils;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import javax.swing.plaf.basic.BasicButtonListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,61 +18,23 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static ArraySortVisualizer.Constants.*;
 
 public class Main {
-    public static final AtomicBoolean flag_sort = new AtomicBoolean(false);
-    public static Scene scene;
-    public static Color itemColor = Color.ALICEBLUE;
-    public static JFrame frame;
-    public static int[] sizeBuff;
-    private final JPanel panel;
-    private static Array<SortItem<Rectangle>> array;
-    private static ShapeObject visual;
+    public final AtomicBoolean flag_sort = new AtomicBoolean(false);
+    public Scene scene;
+    public Color itemColor = Color.ALICEBLUE;
+    public JFrame frame;
+    public int[] sizeBuff;
+    private JPanel scenePane;
+    private final Array<SortItem<Rectangle>> array;
+    private final ShapeObject visual;
     private BufferedImage image;
     private final Timer timer;
-    private final JSpinner sizeSpiner;
     private JPanel settingPane;
-
-    private final StopWatchPane stopWatch;
-    Main(){
+    private StopWatchPane stopWatch;
+    public Main(){
         visual = new ShapeObject("array", 1);
         BufferAWTImageDrawingObject drawingObject = new BufferAWTImageDrawingObject();
         scene = new Scene(WIDTH, HEIGHT, Color.DARKGRAY, drawingObject);
         scene.add(visual);
-
-        /*scene.setCoordVisible(true);
-        scene.setCenterVisible(true);
-        scene.setBorderVisible(true);*/
-
-        frame = new JFrame("Array sort Visualizer");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(new Dimension(WIDTH+100, HEIGHT+100));
-        frame.setLayout(new BorderLayout());
-        panel = new JPanel(){
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                g.drawImage(image, 0, 0, null);
-            }
-        };
-        stopWatch = new StopWatchPane();
-        frame.add(panel, BorderLayout.CENTER);
-        frame.add(stopWatch, BorderLayout.SOUTH);
-        JButton buble = new JButton("Buble");
-        JButton insert = new JButton("Insert");
-        JButton select = new JButton("Select");
-        JButton shafl = new JButton("Shafl");
-
-        buble.addActionListener(actionEvent -> {
-            new Thread(() -> sort(0)).start();
-        });
-        select.addActionListener(actionEvent -> {
-            new Thread(() -> sort(1)).start();
-        });
-        insert.addActionListener(actionEvent -> {
-            new Thread(() -> sort(2)).start();
-        });
-        shafl.addActionListener(actionEvent -> {
-            shafle(true);
-        });
 
         array = new Array<>(SIZE);
         array.setSwapConsumer((i, j) -> {
@@ -99,32 +57,76 @@ public class Main {
 
         array.setSaveConsumer((x) -> SortItem.save(x));
 
-        Box sortingButtonsVBox = Box.createVerticalBox();
-        sortingButtonsVBox.add(buble);
-        sortingButtonsVBox.add(insert);
-        sortingButtonsVBox.add(select);
-        sortingButtonsVBox.add(shafl);
+        timer = new Timer(15, this::draw);
+        setGUI();
+        frame.setVisible(true);
+        shafle(true);
+    }
 
-        frame.add(sortingButtonsVBox, BorderLayout.WEST);
+    private void setGUI(){
+        frame = new JFrame("Array sort Visualizer");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(new Dimension(WIDTH, HEIGHT));
+        frame.setLayout(new BorderLayout());
         frame.addComponentListener(new ComponentAdapter() {
+            @Override
             public void componentResized(ComponentEvent e) {
                 if(!flag_sort.get()) {
-                    scene.resize(panel.getWidth(), panel.getHeight());
+                    scene.resize(scenePane.getWidth(), scenePane.getHeight());
                     shafle(false);
                 }
             }
         });
+        scenePane = new JPanel(){
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(image, 0, 0, null);
+            }
+        };
+        stopWatch = new StopWatchPane();
+
+        JComboBox<String> sortComboBox = new JComboBox<>();
+        sortComboBox.addItem("Bubble");
+        sortComboBox.addItem("Select");
+        sortComboBox.addItem("Insert");
+
+        JButton shafleButton = new JButton("Shafle");
+        shafleButton.addActionListener(actionEvent -> {if(!flag_sort.get())shafle(true);});
+
+        JButton sortButton = new JButton("Sort");
+        sortButton.addActionListener(actionEvent -> new Thread(() -> sort(sortComboBox.getSelectedIndex())).start());
+
+        JPanel sortingButtonPane = new JPanel();
+        sortingButtonPane.setLayout(new GridBagLayout());
+
+        GridBagConstraints sortingButtonsGridBox = new GridBagConstraints();
+        sortingButtonsGridBox.gridx =0;
+        sortingButtonsGridBox.gridy =0;
+        sortingButtonsGridBox.weightx =1;
+        sortingButtonsGridBox.gridwidth =GridBagConstraints.REMAINDER;
+        sortingButtonsGridBox.anchor = GridBagConstraints.NORTH;
+        sortingButtonsGridBox.insets =new Insets(4,4,4,4);
+
+        sortingButtonPane.add(sortComboBox, sortingButtonsGridBox);
+        sortingButtonsGridBox.gridy++;
+        sortingButtonPane.add(sortButton, sortingButtonsGridBox);
+        sortingButtonsGridBox.gridy++;
+        sortingButtonPane.add(shafleButton, sortingButtonsGridBox);
 
         settingPane = new JPanel();
+        settingPane.setLayout(new GridBagLayout());
 
         GridBagConstraints settingGridBox = new GridBagConstraints();
         settingGridBox.gridx =0;
         settingGridBox.gridy =0;
         settingGridBox.weightx =1;
         settingGridBox.gridwidth =GridBagConstraints.REMAINDER;
+        settingGridBox.anchor = GridBagConstraints.NORTH;
         settingGridBox.insets =new Insets(4,4,4,4);
 
-        sizeSpiner = new JSpinner();
+        JLabel sizeLabel = new JLabel("Array size:");
+        JSpinner sizeSpiner = new JSpinner();
         var model = new SpinnerNumberModel();
         model.setMinimum(10);
         model.setMaximum(1000);
@@ -134,33 +136,29 @@ public class Main {
             shafle(true);
         });
         sizeSpiner.setModel(model);
+        settingPane.add(sizeLabel, settingGridBox);
+        settingGridBox.gridy++;
+        settingPane.add(sizeSpiner, settingGridBox);
 
+        JLabel colorLabel = new JLabel("Array color:");
         JButton colorChooser = new JButton("Color");
         colorChooser.addActionListener(actionEvent -> {
             var color = JColorChooser.showDialog(
                     settingPane,
                     "Choose SortItem Color", java.awt.Color.WHITE);
             itemColor = new Color(color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f, color.getAlpha()/255f);
+            colorChooser.setBackground(color);
             shafle(false);
         });
-
-
-        settingPane.add(sizeSpiner, settingGridBox);
-
-        settingGridBox.gridx =0;
         settingGridBox.gridy++;
-        settingGridBox.weightx =0;
-        settingGridBox.gridwidth =1;
+        settingPane.add(colorLabel, settingGridBox);
+        settingGridBox.gridy++;
         settingPane.add(colorChooser, settingGridBox);
 
+        frame.add(scenePane, BorderLayout.CENTER);
+        frame.add(stopWatch, BorderLayout.SOUTH);
+        frame.add(sortingButtonPane, BorderLayout.WEST);
         frame.add(settingPane, BorderLayout.EAST);
-
-        sizeSpiner.setPreferredSize(new Dimension(100, 20));
-
-        timer = new Timer(15, this::draw);
-
-        frame.setVisible(true);
-        shafle(true);
     }
 
     public static void main(String[] args) {
@@ -190,7 +188,7 @@ public class Main {
     private void draw(ActionEvent actionEvent) {
         scene.repaint();
         image = scene.getImage();
-        panel.repaint();
+        scenePane.repaint();
     }
 
     /**Shafl random array*/
@@ -202,11 +200,9 @@ public class Main {
         }
 
         float interval = 3f;
-        //int itemSize = (panel.getWidth())/((SIZE)*(interval+1));
-        float itemSize = (((panel.getWidth()-(SIZE+1)*interval)/(SIZE*2f)));
-        int maxH = (panel.getHeight())/3;
-        //int startX = -(((SIZE - 1) * (itemSize/2 * (interval+1)))) / 2;
-        float startX = -panel.getWidth()/2f + itemSize + interval;
+        float itemSize = (((scenePane.getWidth()-(SIZE+1)*interval)/(SIZE*2f)));
+        int maxH = (scenePane.getHeight())/3;
+        float startX = -scenePane.getWidth()/2f + itemSize + interval;
         int startY = -maxH;
 
         Random r = new Random();
