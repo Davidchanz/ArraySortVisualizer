@@ -12,13 +12,18 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class Main {
     public static int WIDTH = 800;
     public static int HEIGHT = 600;
-    public static boolean flag_sort = false;
+    public static final AtomicBoolean flag_sort = new AtomicBoolean(false);
     public static Scene scene;
     public static int maxH;
     public static int size;
@@ -35,6 +40,8 @@ public class Main {
     private BufferedImage image;
     private long delay = 10L;
     private Timer t;
+
+    private StopWatchPane stopWatch;
     Main(){
         visual = new ShapeObject("array", 1);
         BufferAWTImageDrawingObject drawingObject = new BufferAWTImageDrawingObject();
@@ -56,7 +63,9 @@ public class Main {
                 g.drawImage(image, 0, 0, null);
             }
         };
+        stopWatch = new StopWatchPane();
         frame.add(panel, BorderLayout.CENTER);
+        frame.add(stopWatch, BorderLayout.SOUTH);
         JButton buble = new JButton("Buble");
         JButton insert = new JButton("Insert");
         JButton select = new JButton("Select");
@@ -67,24 +76,16 @@ public class Main {
         shafl.setPreferredSize(new Dimension(70, 20));
 
         buble.addActionListener(actionEvent -> {
-            flag_sort = true;
-            new Thread(() -> bubleSort()).start();
-            flag_sort = false;
+            new Thread(() -> sort(0)).start();
         });
         select.addActionListener(actionEvent -> {
-            flag_sort = true;
-            new Thread(() -> selectionSort()).start();
-            flag_sort = false;
+            new Thread(() -> sort(1)).start();
         });
         insert.addActionListener(actionEvent -> {
-            flag_sort = true;
-            new Thread(() -> insertSort()).start();
-            flag_sort = false;
+            new Thread(() -> sort(2)).start();
         });
         shafl.addActionListener(actionEvent -> {
-            flag_sort = true;
             shafle(true);
-            flag_sort = false;
         });
 
         size = 200;
@@ -118,7 +119,7 @@ public class Main {
         frame.add(vBox, BorderLayout.WEST);
         frame.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-                if(!flag_sort) {
+                if(!flag_sort.get()) {
                     scene.resize(frame.getWidth() - 100, frame.getHeight() - 100);
                     shafle(false);
                 }
@@ -205,28 +206,106 @@ public class Main {
 
     }
 
-    /**Selection Sort*/
-    public void selectionSort() {
-        array.selectSort();
-        sizeBuff = Arrays.stream(sizeBuff).sorted().toArray();
+    public void sort(int type){
+        if(!flag_sort.get()) {
+            flag_sort.set(true);
+            stopWatch.start();
+            switch (type) {
+                case 0 -> array.bubbleSort();
+                case 1 -> array.selectSort();
+                case 2 -> array.insertSort();
+            }
+            sizeBuff = Arrays.stream(sizeBuff).sorted().toArray();
+            stopWatch.stop();
+            flag_sort.set(false);
+        }
     }
 
-    /**Buble Sort*/
-    public void bubleSort(){
-        array.bubbleSort();
-        sizeBuff = Arrays.stream(sizeBuff).sorted().toArray();
+    private static class StopWatchPane extends JPanel {
+
+        private JLabel label;
+        private long lastTickTime;
+        private Timer timer;
+
+        public StopWatchPane() {
+
+        setLayout(new GridBagLayout());
+        label =new
+
+        JLabel(String.format("%04d:%02d:%02d.%03d", 0,0,0,0));
+
+        timer =new
+
+        Timer(100,new ActionListener() {
+            @Override
+            public void actionPerformed (ActionEvent e){
+                long runningTime = System.currentTimeMillis() - lastTickTime;
+                Duration duration = Duration.ofMillis(runningTime);
+                long hours = duration.toHours();
+                duration = duration.minusHours(hours);
+                long minutes = duration.toMinutes();
+                duration = duration.minusMinutes(minutes);
+                long millis = duration.toMillis();
+                long seconds = millis / 1000;
+                millis -= (seconds * 1000);
+                label.setText(String.format("%04d:%02d:%02d.%03d", hours, minutes, seconds, millis));
+            }
+        });
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx =0;
+        gbc.gridy =0;
+        gbc.weightx =1;
+        gbc.gridwidth =GridBagConstraints.REMAINDER;
+        gbc.insets =new
+
+        Insets(4,4,4,4);
+
+        add(label, gbc);
+
+        /*JButton start = new JButton("Start");
+        start.addActionListener(new
+
+        ActionListener() {
+            @Override
+            public void actionPerformed (ActionEvent e){
+                if (!timer.isRunning()) {
+                    lastTickTime = System.currentTimeMillis();
+                    timer.start();
+                }
+            }
+        });
+        JButton stop = new JButton("Stop");
+        stop.addActionListener(new
+
+        ActionListener() {
+            @Override
+            public void actionPerformed (ActionEvent e){
+                timer.stop();
+            }
+        });
+
+        gbc.gridx =0;
+        gbc.gridy++;
+        gbc.weightx =0;
+        gbc.gridwidth =1;
+
+        add(start, gbc);
+
+        gbc.gridx++;
+
+        add(stop, gbc);*/
+    }
+    public void start(){
+        if (!timer.isRunning()) {
+            lastTickTime = System.currentTimeMillis();
+            timer.start();
+        }
     }
 
-    /**Insert Sort*/
-    public void insertSort(){
-        array.insertSort();
-        sizeBuff = Arrays.stream(sizeBuff).sorted().toArray();
-
-        System.out.println(array);
-        Clock clock = Clock.tickMillis(ZoneId.systemDefault());
-        System.out.println(clock.millis());//TODO
-
-        System.out.println(clock.millis());
+    public void stop(){
+            timer.stop();
+    }
     }
 }
 

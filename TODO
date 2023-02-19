@@ -8,10 +8,10 @@
  *
  *      Make more algorith,
  *      Fix Insert Algorithm,
- *      Make algorith not static and make normal buttons,
+ *      DONE 18.02.23 Make algorith not static and make normal buttons,
  *      make setting file with last settings,
- *      make function sort with choose ather sorting algorithms,
- *      make normal timer and show time in sorting time and stop when sorting stops
+ *      DONE 19.02.23 make function sort with choose ather sorting algorithms,
+ *      DONE 19.02.23 make stopwatch
  *
  *
  *
