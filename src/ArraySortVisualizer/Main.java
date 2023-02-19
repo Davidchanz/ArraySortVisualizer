@@ -109,7 +109,7 @@ public class Main {
         frame.addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
                 if(!flag_sort.get()) {
-                    scene.resize(frame.getWidth() - 200, frame.getHeight() - 100);
+                    scene.resize(panel.getWidth(), panel.getHeight());
                     shafle(false);
                 }
             }
@@ -128,7 +128,7 @@ public class Main {
         var model = new SpinnerNumberModel();
         model.setMinimum(10);
         model.setMaximum(1000);
-        model.setValue(200);
+        model.setValue(SIZE);
         model.addChangeListener(changeEvent -> {
             SIZE = (int)model.getValue();
             shafle(true);
@@ -140,7 +140,7 @@ public class Main {
             var color = JColorChooser.showDialog(
                     settingPane,
                     "Choose SortItem Color", java.awt.Color.WHITE);
-            itemColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
+            itemColor = new Color(color.getRed()/255f, color.getGreen()/255f, color.getBlue()/255f, color.getAlpha()/255f);
             shafle(false);
         });
 
@@ -201,10 +201,12 @@ public class Main {
             sizeBuff = new int[SIZE];
         }
 
-        int interval = 0;
-        int itemSize = (Main.frame.getWidth()-150)/((SIZE)*(interval+1));
-        int maxH = (Main.frame.getHeight()-100)/4;
-        int startX = -(((SIZE - 1) * (itemSize * (interval + 1)))) / 2;
+        float interval = 3f;
+        //int itemSize = (panel.getWidth())/((SIZE)*(interval+1));
+        float itemSize = (((panel.getWidth()-(SIZE+1)*interval)/(SIZE*2f)));
+        int maxH = (panel.getHeight())/3;
+        //int startX = -(((SIZE - 1) * (itemSize/2 * (interval+1)))) / 2;
+        float startX = -panel.getWidth()/2f + itemSize + interval;
         int startY = -maxH;
 
         Random r = new Random();
@@ -226,13 +228,13 @@ public class Main {
                 }
             }
             if(rand) {
-                SortItem<Rectangle> item = new SortItem<>(new Rectangle(value, itemSize / 2, new Vector2(startX + (i * (itemSize * (interval + 1))), startY + value), itemColor), value);
+                SortItem<Rectangle> item = new SortItem<>(new Rectangle(value, (int)itemSize, new Vector2(startX + (i * (itemSize*2 + interval)), startY + value), itemColor), value);
                 array.set(i, item);
                 visual.add(item.getBody());
                 sizeBuff[i] = item.getValue();
             }
             else {
-                SortItem<Rectangle> item = new SortItem<>(new Rectangle(array.get(i).getValue(), itemSize / 2, new Vector2(startX + (i * (itemSize * (interval + 1))), startY + value), itemColor), value);
+                SortItem<Rectangle> item = new SortItem<>(new Rectangle(array.get(i).getValue(), (int)itemSize, new Vector2(startX + (i * (itemSize*2 + interval)), startY + value), itemColor), value);
                 array.set(i, item);
                 visual.set(i, item.getBody());
             }

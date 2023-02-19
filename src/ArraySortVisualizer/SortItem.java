@@ -2,6 +2,7 @@ package ArraySortVisualizer;
 
 import com.FXChemiEngine.engine.Shape;
 import com.FXChemiEngine.engine.shape.Rectangle;
+import com.FXChemiEngine.util.Color;
 
 public class SortItem<T extends Shape> implements Comparable<SortItem<T>>{
     private T body;
@@ -9,6 +10,7 @@ public class SortItem<T extends Shape> implements Comparable<SortItem<T>>{
 
     public SortItem(T body, int value){
         this.body = body;
+        this.body.setStrokeColor(body.color);
         this.value = value;
     }
 
